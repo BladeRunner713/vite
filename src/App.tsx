@@ -1,99 +1,54 @@
-import { useAccount } from 'wagmi'
-
-import { Account } from './components/Account'
-import { Balance } from './components/Balance'
-import { BlockNumber } from './components/BlockNumber'
-import { Connect } from './components/Connect'
-import { NetworkSwitcher } from './components/NetworkSwitcher'
-import { ReadContract } from './components/ReadContract'
-import { ReadContracts } from './components/ReadContracts'
-import { ReadContractsInfinite } from './components/ReadContractsInfinite'
-import { SendTransaction } from './components/SendTransaction'
-import { SendTransactionPrepared } from './components/SendTransactionPrepared'
-import { SignMessage } from './components/SignMessage'
-import { SignTypedData } from './components/SignTypedData'
-import { Token } from './components/Token'
-import { WatchContractEvents } from './components/WatchContractEvents'
-import { WatchPendingTransactions } from './components/WatchPendingTransactions'
-import { WriteContract } from './components/WriteContract'
-import { WriteContractPrepared } from './components/WriteContractPrepared'
+import {useAccount, useConnect, useContractWrite, useDisconnect, useNetwork} from 'wagmi'
+import './index.css'
+import abi from './abi.json'
+import {parseEther} from "viem";
 
 export function App() {
-  const { isConnected } = useAccount()
+    const {connect, connectors, error, isLoading, pendingConnector} = useConnect()
+    const {address, isConnected, isDisconnected} = useAccount()
+    const {disconnect} = useDisconnect()
+    const {chain, chains} = useNetwork()
+    const {data, isSuccess, write} = useContractWrite({
+        address: '0x70BaD09280FD342D02fe64119779BC1f0791BAC2',
+        abi: abi.abi,
+        functionName: 'sendMessage',
+        args: [address, parseEther("0.01"), "0x"],
+    })
 
-  return (
-    <>
-      <h1>wagmi + Vite</h1>
-
-      <Connect />
-
-      {isConnected && (
-        <>
-          <hr />
-          <h2>Network</h2>
-          <NetworkSwitcher />
-          <br />
-          <hr />
-          <h2>Account</h2>
-          <Account />
-          <br />
-          <hr />
-          <h2>Balance</h2>
-          <Balance />
-          <br />
-          <hr />
-          <h2>Block Number</h2>
-          <BlockNumber />
-          <br />
-          <hr />
-          <h2>Read Contract</h2>
-          <ReadContract />
-          <br />
-          <hr />
-          <h2>Read Contracts</h2>
-          <ReadContracts />
-          <br />
-          <hr />
-          <h2>Read Contracts Infinite</h2>
-          <ReadContractsInfinite />
-          <br />
-          <hr />
-          <h2>Send Transaction</h2>
-          <SendTransaction />
-          <br />
-          <hr />
-          <h2>Send Transaction (Prepared)</h2>
-          <SendTransactionPrepared />
-          <br />
-          <hr />
-          <h2>Sign Message</h2>
-          <SignMessage />
-          <br />
-          <hr />
-          <h2>Sign Typed Data</h2>
-          <SignTypedData />
-          <br />
-          <hr />
-          <h2>Token</h2>
-          <Token />
-          <br />
-          <hr />
-          <h2>Watch Contract Events</h2>
-          <WatchContractEvents />
-          <br />
-          <hr />
-          <h2>Watch Pending Transactions</h2>
-          <WatchPendingTransactions />
-          <br />
-          <hr />
-          <h2>Write Contract</h2>
-          <WriteContract />
-          <br />
-          <hr />
-          <h2>Write Contract (Prepared)</h2>
-          <WriteContractPrepared />
-        </>
-      )}
-    </>
-  )
+    return (
+        <div className="bg-black min-h-screen flex justify-center items-center flex-col">
+            {isDisconnected && <div className="bg-white rounded-3xl py-2 px-4">
+                {connectors.map((connector) => (
+                    <button
+                        disabled={!connector.ready}
+                        key={connector.id}
+                        onClick={() => connect({connector})}
+                    >
+                        connect to {connector.name}
+                        {!connector.ready && ' (unsupported)'}
+                        {isLoading &&
+                            connector.id === pendingConnector?.id &&
+                            ' (connecting)'}
+                    </button>
+                ))}
+                {error && <div>{error.message}</div>}
+            </div>}
+            {isConnected && <div className="bg-white rounded-3xl py-2 px-4">
+                <button onClick={() => disconnect()}>Disconnect</button>
+            </div>}
+            {isConnected && <button
+                className={chain?.name === 'Goerli' ? "bg-white rounded-3xl py-2 px-4 mt-4" : "bg-gray-500 rounded-3xl py-2 px-4 mt-4 cursor-not-allowed"}
+                onClick={() => {
+                    if (chain?.name === 'Goerli') {
+                        write({
+                            value: parseEther('0.01'),
+                        })
+                    }
+                }
+                }>
+                {chain?.name === 'Goerli' ? "Bridge 0.01 ETH to Linea Testnet" : "Wrong network! Please switch to Goerli"}
+            </button>
+            }
+        </div>
+    )
 }
