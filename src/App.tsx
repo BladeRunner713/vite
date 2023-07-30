@@ -1,4 +1,4 @@
-import {useAccount, useConnect, useContractWrite, useDisconnect, useNetwork} from 'wagmi'
+import {useAccount, useBalance, useConnect, useContractWrite, useDisconnect, useNetwork} from 'wagmi'
 import './index.css'
 import abi from './abi.json'
 import {parseEther} from "viem";
@@ -8,7 +8,8 @@ export function App() {
     const {address, isConnected, isDisconnected} = useAccount()
     const {disconnect} = useDisconnect()
     const {chain, chains} = useNetwork()
-    const {data, isSuccess, write} = useContractWrite({
+    const {data} = useBalance({address: address})
+    const {write} = useContractWrite({
         address: '0x70BaD09280FD342D02fe64119779BC1f0791BAC2',
         abi: abi.abi,
         functionName: 'sendMessage',
@@ -46,7 +47,7 @@ export function App() {
                     }
                 }
                 }>
-                {chain?.name === 'Goerli' ? "Bridge 0.01 ETH to Linea Testnet" : "Wrong network! Please switch to Goerli"}
+                {chain?.name === 'Goerli' ? data?.value && data?.value < BigInt(10 ** 16) ? "Insufficient Balance" : "Bridge 0.01 ETH to Linea Testnet" : "Wrong network! Please switch to Goerli"}
             </button>
             }
         </div>
